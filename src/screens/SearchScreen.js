@@ -1,53 +1,40 @@
-import React, {useState} from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, {useState, useEffect} from 'react';
+import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import SearchBar from '../Components/SearchBar';
-import yelp from '../api/yelp';
+import useYelpResults from '../hooks/useYelpResults';
+import ResultsList from '../Components/ResultsList';
 
-const SearchScreen = () => {
+
+const SearchScreen = ({navigation}) => {
     const[term, setTerm] = useState('');
-    const[results, setResults] = useState([]);
-    const[errorMessage, setErrorMessage] = useState('');
+    const[searchApi, results, errorMessage] = useYelpResults();
 
-    // const searchApi = () =>{
-    //     yelp.get('/search',{
-    //         params: {
-    //             limit: 50,
-    //              term,
-    //             location: 'New York'
-    //         }
-    //     }).then(response=>{
-    //         console.log('res',response);
-    //         setResults(response.data.businesses);
-    //     }).catch(err=>{
-    //         console.log('err', err);
-    //     });
-        
-    // };
-
-    const searchApi = async () =>{
-        try{
-        const response = await yelp.get('/search',{
-            params: {
-                limit: 50,
-                 term,
-                location: 'New York'
-            }
-        }); 
-        setResults(response.data.businesses);
-    }catch(err){
-        setErrorMessage('Something went wrong');
-    }
+    const filterResultsByPrice = (price) => {
+        return results.filter(result=>{
+            return result.price === price;
+        })
     };
 
     return(
-        <View>
+        <View style={{flex: 1}}>
             <SearchBar 
                 term={term} 
                 onTermChange = {(newTerm)=>setTerm(newTerm)}
-                onTermSubmit = {searchApi}
+                onTermSubmit = {(newTerm)=>searchApi(newTerm)}
                 />
-            <Text>{errorMessage}</Text>
-    <Text>we have found {results.length} results</Text>
+            {errorMessage ? <Text>{errorMessage}</Text> : null}
+            <Text style={{marginLeft: 15}}>we have found {results.length} results</Text>
+            <ScrollView>
+            <ResultsList results = {filterResultsByPrice('$')} 
+                    title="Cost Effective"
+                    navigation={navigation}/>
+            <ResultsList results = {filterResultsByPrice('$$')} 
+                    title="Bit Pricier"
+                    navigation={navigation}/>
+            <ResultsList results = {filterResultsByPrice('$$$')} 
+                    title="Big Spencer"
+                    navigation={navigation}/>
+            </ScrollView>
         </View>
     );
 };
